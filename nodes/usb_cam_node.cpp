@@ -40,6 +40,7 @@
 #include <camera_info_manager/camera_info_manager.h>
 #include <sstream>
 #include <std_srvs/Empty.h>
+#include <usb_cam/SetParam.h>
 
 namespace usb_cam {
 
@@ -64,9 +65,7 @@ public:
 
   UsbCam cam_;
 
-  ros::ServiceServer service_start_, service_stop_;
-
-
+  ros::ServiceServer service_start_, service_stop_, service_set_param_;
 
   bool service_start_cap(std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res )
   {
@@ -74,10 +73,16 @@ public:
     return true;
   }
 
-
   bool service_stop_cap( std_srvs::Empty::Request  &req, std_srvs::Empty::Response &res )
   {
     cam_.stop_capturing();
+    return true;
+  }
+
+  bool service_set_param( usb_cam::SetParam::Request  &req, usb_cam::SetParam::Response &res )
+  {
+    cam_.set_v4l_parameter(req.param_name, req.param_value);
+    res.result = "OK";
     return true;
   }
 
@@ -121,6 +126,7 @@ public:
     // create Services
     service_start_ = node_.advertiseService("start_capture", &UsbCamNode::service_start_cap, this);
     service_stop_ = node_.advertiseService("stop_capture", &UsbCamNode::service_stop_cap, this);
+    service_set_param_ = node_.advertiseService("set_param", &UsbCamNode::service_set_param, this);
 
     // check for default camera info
     if (!cinfo_->isCalibrated())
